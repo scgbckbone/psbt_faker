@@ -31,7 +31,11 @@ Usage: psbt_faker [OPTIONS] OUTPUT.PSBT [XPUB]
 
 Options:
   -i, --num-ins INTEGER           Number of inputs (default 1)
+  -S, --sequence PARSE_INT_STRING
+                                  Sequence number for each input
   -o, --num-outs INTEGER          Number of all txn outputs (default 2)
+  -O, --output-amount INTEGER     Amount of each non-change output in sats
+                                  (default: all outputs are the same)
   -c, --num-change INTEGER        Number of change outputs (default 1) from
                                   num-outs
   -f, --fee INTEGER               Miner's fee in Satoshis
