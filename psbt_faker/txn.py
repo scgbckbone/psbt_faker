@@ -79,10 +79,12 @@ def make_change_addr(master_xfp, orig_der,  account_key, idx, style):
     return redeem_scr, actual_scr, is_segwit, dest.sec(), path
 
 
-def fake_txn(num_ins, num_outs, master_xpub=None, fee=10000,
+def fake_txn(input_amounts, num_outs, master_xpub=None, fee=10000,
          outvals=None, segwit_in=False, wrapped=False, outstyles=None,
-         change_outputs=[], op_return=None, psbt_v2=None, input_amount=1E8,
+         change_outputs=[], op_return=None, psbt_v2=None,
          locktime=0, sequences=None, is_testnet=False, partial=False):
+
+    num_ins = len(input_amounts)
 
     af = ("p2sh-p2wpkh" if wrapped else "p2wpkh") if segwit_in else "p2pkh"
 
@@ -185,7 +187,7 @@ def fake_txn(num_ins, num_outs, master_xpub=None, fee=10000,
             # p2pkh
             scr = bytes([0x76, 0xa9, 0x14]) + subkey.hash160() + bytes([0x88, 0xac])
 
-        supply.vout.append(CTxOut(int(input_amount), scr))
+        supply.vout.append(CTxOut(int(input_amounts[i]), scr))
 
         if segwit_in:
             # just utxo for segwit
@@ -259,10 +261,10 @@ def fake_txn(num_ins, num_outs, master_xpub=None, fee=10000,
         if psbt_v2:
             psbt.outputs[i].script = act_scr
             psbt.outputs[i].amount = int(
-                outvals[i] if outvals else round(((input_amount * num_ins) - fee) / num_outs, 4))
+                outvals[i] if outvals else round((sum(input_amounts) - fee) / num_outs, 4))
 
         if not outvals:
-            h = CTxOut(int(round(((input_amount * num_ins) - fee) / num_outs, 4)), act_scr)
+            h = CTxOut(int(round((sum(input_amounts) - fee) / num_outs, 4)), act_scr)
         else:
             h = CTxOut(int(outvals[i]), act_scr)
 
@@ -354,10 +356,12 @@ def make_ms_address(M, keys, idx, is_change, addr_fmt="p2wsh", testnet=1, bip67=
     return addr, scriptPubKey, script, bip32paths
 
 
-def fake_ms_txn(num_ins, num_outs, M, keys, fee=10000, outvals=None,
+def fake_ms_txn(input_amounts, num_outs, M, keys, fee=10000, outvals=None,
                 outstyles=['p2wsh'], change_outputs=[], incl_xpubs=False,
-                input_amount=1E8, bip67=True, locktime=0, psbt_v2=False,
+                bip67=True, locktime=0, psbt_v2=False,
                 sequences=None, is_testnet=False, change_af=None):
+    num_ins = len(input_amounts)
+
     # make various size MULTISIG txn's ... completely fake and pointless values
     # - but has UTXO's to match needs
     # spending change outputs
@@ -410,7 +414,7 @@ def fake_ms_txn(num_ins, num_outs, M, keys, fee=10000, outvals=None,
         )
         supply.vin = [CTxIn(out_point, nSequence=0xffffffff)]
 
-        supply.vout.append(CTxOut(int(input_amount), scriptPubKey))
+        supply.vout.append(CTxOut(int(input_amounts[i]), scriptPubKey))
 
         if "wsh" in change_af:
             psbt.inputs[i].utxo = supply.serialize_with_witness()
@@ -483,11 +487,11 @@ def fake_ms_txn(num_ins, num_outs, M, keys, fee=10000, outvals=None,
             if outvals:
                 psbt.outputs[i].amount = outvals[i]
             else:
-                psbt.outputs[i].amount = int(round(((input_amount * num_ins) - fee) / num_outs, 4))
+                psbt.outputs[i].amount = int(round((sum(input_amounts) - fee) / num_outs, 4))
 
 
         if not outvals:
-            h = CTxOut(int(round(((input_amount*num_ins)-fee) / num_outs, 4)), scriptPubKey)
+            h = CTxOut(int(round((sum(input_amounts)-fee) / num_outs, 4)), scriptPubKey)
         else:
             h = CTxOut(int(outvals[i]), scriptPubKey)
 
